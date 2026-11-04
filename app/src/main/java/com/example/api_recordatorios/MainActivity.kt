@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import com.example.api_recordatorios.model.Recordatorio
 import com.example.api_recordatorios.ui.components.TarjetaRecordatorio
+import com.example.api_recordatorios.ui.navigation.NavegacionApp
 import com.example.api_recordatorios.ui.screens.PantallaRecordatorios
 
 class MainActivity : ComponentActivity() {
@@ -33,9 +34,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ApirecordatoriosTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PantallaRecordatorios(
-                        recordatorios = DatosSimulados.recordatorios,
-                        onRecordatorioClick = {},
+                    NavegacionApp(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
