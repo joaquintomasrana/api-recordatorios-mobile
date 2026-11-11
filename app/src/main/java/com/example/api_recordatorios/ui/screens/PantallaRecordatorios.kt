@@ -12,17 +12,26 @@ import androidx.compose.ui.unit.dp
 import com.example.api_recordatorios.data.DatosSimulados
 import com.example.api_recordatorios.model.Recordatorio
 import com.example.api_recordatorios.ui.components.TarjetaRecordatorio
-
+import androidx.compose.material3.Button
 @Composable
 fun PantallaRecordatorios(
     recordatorios: List<Recordatorio>,
     onRecordatorioClick: (Int) -> Unit,
+    onCrearRecordatorio: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item {
+            Button(
+                onClick = onCrearRecordatorio
+            ) {
+                Text(text = "Crear recordatorio")
+            }
+        }
+
         item {
             Text(
                 text = "Mis tareas",

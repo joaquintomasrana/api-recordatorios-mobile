@@ -51,7 +51,8 @@ fun GreetingPreview() {
     ApirecordatoriosTheme {
         PantallaRecordatorios(
             recordatorios = DatosSimulados.recordatorios,
-            onRecordatorioClick = {}
+            onRecordatorioClick = {},
+            onCrearRecordatorio = {}
         )
     }
 }
