@@ -1,108 +1,134 @@
 package com.example.api_recordatorios.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.FilterChip
-import androidx.compose.runtime.remember
-import com.example.api_recordatorios.model.Prioridad
-import com.example.api_recordatorios.data.DatosSimulados
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import com.example.api_recordatorios.model.Categoria
+import com.example.api_recordatorios.model.Prioridad
+import com.example.api_recordatorios.ui.state.EstadoCreacion
+import com.example.api_recordatorios.ui.state.EstadoEnvio
 
 @Composable
 fun PantallaCrear(
+    estado: EstadoCreacion,
+    categorias: Set<Categoria>,
+    onTituloChange: (String) -> Unit,
+    onDescripcionChange: (String) -> Unit,
+    onCategoriaChange: (Categoria) -> Unit,
+    onPrioridadChange: (Prioridad) -> Unit,
     onCancelar: () -> Unit,
-    onGuardar: (String, String, Categoria, Prioridad) -> Unit
+    onGuardar: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val guardando = estado.envio == EstadoEnvio.Guardando
+    val editable = !guardando && estado.envio != EstadoEnvio.Exito
 
-    val titulo = rememberSaveable { mutableStateOf("") }
-    val descripcion = rememberSaveable { mutableStateOf("") }
-    val tituloValido = titulo.value.trim().length >= 4
-    val descripcionValida = descripcion.value.length <= 200
-    val prioridad = remember { mutableStateOf<Prioridad?>(null) }
-    val categoria = remember { mutableStateOf<Categoria?>(null) }
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("Nuevo recordatorio", style = MaterialTheme.typography.headlineSmall)
 
-    val formularioValido = tituloValido &&
-            descripcionValida &&
-            categoria.value != null &&
-            prioridad.value != null
-
-
-    Column {
-        Text(text = "Nuevo recordatorio")
-
-        OutlinedTextField(
-            value = titulo.value,
-            onValueChange = { nuevoTexto ->
-                titulo.value = nuevoTexto
-            },
-            label = { Text(text = "Título") },
-            isError = titulo.value.isNotEmpty() && !tituloValido,
-            supportingText = { Text(text = "Mínimo 4 caracteres") }
+        CampoRecordatorio(
+            etiqueta = "Título",
+            valor = estado.titulo,
+            onCambio = onTituloChange,
+            ayuda = "Mínimo 4 caracteres",
+            mensajeError = estado.errorTitulo,
+            habilitado = editable,
+            unaLinea = true
         )
 
-        OutlinedTextField(
-            value = descripcion.value,
-            onValueChange = { nuevoTexto ->
-                descripcion.value = nuevoTexto
-            },
-            label = { Text(text = "Descripción") },
-            isError = !descripcionValida,
-            supportingText = {
-                Text(text = "${descripcion.value.length}/200 caracteres")
-            }
+        CampoRecordatorio(
+            etiqueta = "Descripción",
+            valor = estado.descripcion,
+            onCambio = onDescripcionChange,
+            ayuda = "${estado.descripcion.length}/200 caracteres",
+            mensajeError = estado.errorDescripcion,
+            habilitado = editable
         )
 
-        Text(text = "Categoría")
-
-        Row {
-            DatosSimulados.categorias.forEach { opcion ->
+        Text("Categoría")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            categorias.forEach { opcion ->
                 FilterChip(
-                    selected = categoria.value == opcion,
-                    onClick = { categoria.value = opcion },
-                    label = { Text(text = opcion.nombre) }
+                    selected = estado.categoria == opcion,
+                    onClick = { onCategoriaChange(opcion) },
+                    label = { Text(opcion.nombre) },
+                    enabled = editable
                 )
             }
         }
 
-        Text(text = "Prioridad")
-
-        Row {
+        Text("Prioridad")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(Prioridad.Baja, Prioridad.Media, Prioridad.Alta).forEach { opcion ->
                 FilterChip(
-                    selected = prioridad.value == opcion,
-                    onClick = { prioridad.value = opcion },
-                    label = { Text(text = opcion.etiqueta) }
+                    selected = estado.prioridad == opcion,
+                    onClick = { onPrioridadChange(opcion) },
+                    label = { Text(opcion.etiqueta) },
+                    enabled = editable
                 )
             }
         }
 
-        Button(
-            onClick = {
-                val categoriaElegida = categoria.value
-                val prioridadElegida = prioridad.value
-
-                if (categoriaElegida != null && prioridadElegida != null) {
-                    onGuardar(
-                        titulo.value.trim(),
-                        descripcion.value,
-                        categoriaElegida,
-                        prioridadElegida
-                    )
-                }
-            },
-            enabled = formularioValido
-        ) {
-            Text(text = "Guardar")
+        val envio = estado.envio
+        if (envio is EstadoEnvio.Error) {
+            Text(
+                text = envio.mensaje,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            )
         }
 
-        Button(onClick = onCancelar) {
-            Text(text = "Cancelar")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onGuardar, enabled = estado.puedeGuardar) {
+                Text(if (guardando) "Guardando…" else "Guardar")
+            }
+            Button(onClick = onCancelar, enabled = editable) {
+                Text("Cancelar")
+            }
         }
     }
+}
+
+@Composable
+private fun CampoRecordatorio(
+    etiqueta: String,
+    valor: String,
+    onCambio: (String) -> Unit,
+    ayuda: String,
+    mensajeError: String?,
+    habilitado: Boolean,
+    modifier: Modifier = Modifier,
+    unaLinea: Boolean = false
+) {
+    OutlinedTextField(
+        value = valor,
+        onValueChange = onCambio,
+        label = { Text(etiqueta) },
+        supportingText = { Text(mensajeError ?: ayuda) },
+        isError = mensajeError != null,
+        enabled = habilitado,
+        singleLine = unaLinea,
+        modifier = modifier.fillMaxWidth().semantics {
+            if (mensajeError != null) error(mensajeError)
+        }
+    )
 }
