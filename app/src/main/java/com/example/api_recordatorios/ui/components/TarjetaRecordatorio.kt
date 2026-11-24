@@ -47,6 +47,7 @@ fun TarjetaRecordatorio(
             Text(
                 text = "Estado: ${recordatorio.estado.etiqueta}"
             )
+                    Text(text = recordatorio.sincronizacion)
         }
     }
 }

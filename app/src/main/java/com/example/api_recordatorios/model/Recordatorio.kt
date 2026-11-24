@@ -6,11 +6,13 @@ data class Recordatorio(
     val categoria: Categoria,
     val prioridad: Prioridad,
     val estado: EstadoRecordatorio = EstadoRecordatorio.Pendiente,
-    val descripcion: String? = null
+    val descripcion: String? = null,
+    val fecha: Long = System.currentTimeMillis(),
+    val sincronizacion: String = "Pendiente"
 ) {
     init {
-        require(id > 0) {
-            "El identificador debe ser mayor que cero"
+        require(id >= 0) {
+            "El identificador no puede ser negativo"
         }
 
         require(titulo.isNotBlank()) {

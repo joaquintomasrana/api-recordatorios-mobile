@@ -4,41 +4,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.api_recordatorios.data.RepositorioRecordatorios
 import com.example.api_recordatorios.ui.state.EstadoListado
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class ListadoViewModel(
-    internal val repositorio: RepositorioRecordatorios
-) : ViewModel() {
-
+class ListadoViewModel(internal val repositorio: RepositorioRecordatorios) : ViewModel() {
     private val _estado = MutableStateFlow<EstadoListado>(EstadoListado.Cargando)
-    val estado: StateFlow<EstadoListado> = _estado.asStateFlow()
+    val estado = _estado.asStateFlow()
+    val sincronizacion = repositorio.mensajeSincronizacion
+    private var consulta: Job? = null
 
-    private var carga: Job? = null
-
-    init {
-        cargar()
-    }
+    init { cargar() }
 
     fun cargar() {
-        carga?.cancel()
-        carga = viewModelScope.launch {
-            _estado.value = EstadoListado.Cargando
-            delay(800)
-
-            _estado.value = try {
-                val lista = repositorio.obtenerTodos()
-                if (lista.isEmpty()) EstadoListado.Vacio else EstadoListado.ConDatos(lista)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                EstadoListado.Error("No se pudieron cargar los recordatorios")
-            }
+        consulta?.cancel()
+        consulta = viewModelScope.launch {
+            repositorio.observarTodos()
+                .map { lista ->
+                    if (lista.isEmpty()) EstadoListado.Vacio else EstadoListado.ConDatos(lista)
+                }
+                .catch { emit(EstadoListado.Error("No se pudo leer el almacenamiento. Reintentá.")) }
+                .collect { _estado.value = it }
         }
+    }
+
+    fun sincronizar() {
+        viewModelScope.launch { repositorio.sincronizar() }
     }
 }

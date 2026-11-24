@@ -9,18 +9,37 @@ import com.example.api_recordatorios.model.Recordatorio
 import com.example.api_recordatorios.ui.state.EstadoCreacion
 import com.example.api_recordatorios.ui.state.EstadoEnvio
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 class CreacionViewModel(
     private val repositorio: RepositorioRecordatorios,
-    val categorias: Set<Categoria>
+    val categorias: Set<Categoria>,
+    private val id: Int? = null
 ) : ViewModel() {
     private val _estado = MutableStateFlow(EstadoCreacion())
     val estado = _estado.asStateFlow()
+
+    init {
+        if (id != null) viewModelScope.launch {
+            try {
+                val registro = repositorio.observar(id).first()
+                if (registro != null) _estado.value = EstadoCreacion(
+                    titulo = registro.titulo,
+                    descripcion = registro.descripcion.orEmpty(),
+                    categoria = registro.categoria,
+                    prioridad = registro.prioridad,
+                    categoriaValida = registro.categoria in categorias
+                )
+                else _estado.update { it.copy(envio = EstadoEnvio.Error("No se encontró el recordatorio")) }
+            } catch (_: Exception) {
+                _estado.update { it.copy(envio = EstadoEnvio.Error("No se pudo leer el recordatorio")) }
+            }
+        }
+    }
 
     fun cambiarTitulo(titulo: String) = editar {
         it.copy(
@@ -65,16 +84,17 @@ class CreacionViewModel(
 
         _estado.update { it.copy(envio = EstadoEnvio.Guardando) }
         viewModelScope.launch {
-            delay(800)
             val resultado = try {
-                val siguienteId = (repositorio.obtenerTodos().maxOfOrNull { it.id } ?: 0) + 1
+                val anterior = id?.let { repositorio.observar(it).first() }
                 repositorio.guardar(
                     Recordatorio(
-                        id = siguienteId,
+                        id = id ?: 0,
                         titulo = formulario.titulo.trim(),
                         descripcion = formulario.descripcion.ifBlank { null },
                         categoria = categoria,
-                        prioridad = prioridad
+                        prioridad = prioridad,
+                        estado = anterior?.estado ?: com.example.api_recordatorios.model.EstadoRecordatorio.Pendiente,
+                        fecha = anterior?.fecha ?: System.currentTimeMillis()
                     )
                 )
                 EstadoEnvio.Exito

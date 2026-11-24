@@ -12,15 +12,22 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun PantallaDetalle(
     recordatorio: Recordatorio,
     onVolver: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditar: () -> Unit = {},
+    onCambiarEstado: () -> Unit = {},
+    onEliminar: () -> Unit = {}
 ) {
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(text = recordatorio.titulo)
@@ -30,6 +37,8 @@ fun PantallaDetalle(
         Text(text = "Prioridad: ${recordatorio.prioridad.etiqueta}")
 
         Text(text = "Estado: ${recordatorio.estado.etiqueta}")
+        Text(text = "Fecha: ${DateFormat.getDateTimeInstance().format(Date(recordatorio.fecha))}")
+        Text(text = recordatorio.sincronizacion)
 
         Text(
             text = recordatorio.descripcion ?: "Sin descripción"
@@ -39,6 +48,9 @@ fun PantallaDetalle(
         ) {
             Text(text = "Volver")
         }
+        Button(onClick = onEditar) { Text("Editar") }
+        Button(onClick = onCambiarEstado) { Text("Cambiar estado") }
+        Button(onClick = onEliminar) { Text("Eliminar") }
     }
 }
 

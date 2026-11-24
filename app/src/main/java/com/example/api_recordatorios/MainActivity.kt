@@ -26,13 +26,18 @@ import com.example.api_recordatorios.model.Recordatorio
 import com.example.api_recordatorios.ui.components.TarjetaRecordatorio
 import com.example.api_recordatorios.ui.navigation.NavegacionApp
 import com.example.api_recordatorios.ui.screens.PantallaRecordatorios
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.api_recordatorios.data.Preferencias
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ApirecordatoriosTheme {
+            val app = application as RecordatoriosApp
+            val preferencias = app.repositorio.preferencias.preferencias
+                .collectAsStateWithLifecycle(initialValue = Preferencias()).value
+            ApirecordatoriosTheme(darkTheme = preferencias.temaOscuro) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavegacionApp(
                         modifier = Modifier.padding(innerPadding)

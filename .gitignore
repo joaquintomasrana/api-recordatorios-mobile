@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+/servidor/*.sqlite3
+/servidor/__pycache__/
+/entrega/
